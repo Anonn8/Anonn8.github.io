@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Random ເມນູອາຫານຈານດຽວ 30 ມື້</title>
+    
+    <!-- PWA Meta Tags ເພື່ອໃຫ້ເປັນ App -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MenuRandom">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Lao', sans-serif;
+            background-color: #f0f2f5;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .meal-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .meal-card.active {
+            transform: scale(1.02);
+        }
+        /* ຊ່ວຍໃຫ້ເບິ່ງຄື App ຫຼາຍຂຶ້ນໃນມືຖື */
+        @media (display-mode: standalone) {
+            body {
+                padding-top: env(safe-area-inset-top);
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-md mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-indigo-800 mb-2">🍽️ ເມນູມື້ນີ້</h1>
+            <p class="text-gray-500 font-medium italic text-sm">ຊ່ວງເວລາທອງ: 10:00 - 12:00</p>
+        </div>
+
+        <!-- Display Card -->
+        <div id="result-container" class="hidden bg-white rounded-3xl shadow-2xl p-8 mb-8 border-b-8 border-indigo-600 meal-card active">
+            <div class="flex justify-between items-start mb-4">
+                <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">ເມນູແນະນຳ</span>
+                <span id="price-tag" class="text-green-600 font-bold text-lg"></span>
+            </div>
+            <div id="meal-display" class="text-3xl font-bold text-gray-900 leading-tight mb-4">...</div>
+            <div class="flex items-center text-gray-400 text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>ຢ່າລືມດື່ມນ້ຳກ່ອນກິນເຂົ້າ</span>
+            </div>
+        </div>
+
+        <!-- Main Button -->
+        <button id="random-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-lg active:scale-95 transition-all text-xl mb-6 flex items-center justify-center gap-3">
+            <span>🎲</span> Random ເມນູມື້ນີ້
+        </button>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+                <div class="text-gray-400 text-[10px] mb-1 uppercase font-bold tracking-tighter">ກິນແລ້ວ</div>
+                <div id="counter" class="text-2xl font-black text-indigo-600">0/36</div>
+            </div>
+            <button id="reset-btn" class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 hover:bg-red-50 hover:border-red-200 transition-colors group">
+                <div class="text-gray-400 text-[10px] mb-1 uppercase font-bold tracking-tighter group-hover:text-red-400">ເລີ່ມໃໝ່</div>
+                <div class="text-xl font-black text-gray-300 group-hover:text-red-500 uppercase">Reset</div>
+            </button>
+        </div>
+
+        <!-- History Section -->
+        <div class="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-white">
+            <h3 class="font-bold text-gray-600 mb-4 flex items-center gap-2 text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                ປະຫວັດການກິນ (30 ມື້ຫຼ້າສຸດ)
+            </h3>
+            <ul id="history-list" class="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                <li class="text-gray-400 text-center py-8 italic text-xs">ຍັງບໍ່ມີຂໍ້ມູນການສຸ່ມ</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const mealData = [
+            { name: "ເຂົ້າຜັດ ໝູ/ໄກ່", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຜັດ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຜັດ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າສະເຕັກ ໝູ/ໄກ່", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າສະເຕັກ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າສະເຕັກ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າກະເພົາ ໝູ/ໄກ່", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າກະເພົາ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າກະເພົາ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າພິກໄທດຳ ໝູ/ໄກ່", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າພິກໄທດຳ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າພິກໄທດຳ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຜົງກະຫຣີ ໝູ/ໄກ່", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຜົງກະຫຣີ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຜົງກະຫຣີ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າຄະນ້າໝູກອບ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຄະນ້າ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຄະນ້າ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຂີງ ໝູ/ໄກ່", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຂີງ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຂີງ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຜັກລວມ ໝູ/ໄກ່", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຜັກລວມ ງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຜັດຜັກລວມ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ສຸກີ້ນ້ຳ/ແຫ້ງ ໝູ/ໄກ່", price: "40,000 ກີບ" },
+            { name: "ສຸກີ້ນ້ຳ/ແຫ້ງ ງົວ", price: "45,000 ກີບ" },
+            { name: "ສຸກີ້ນ້ຳ/ແຫ້ງ ທະເລ", price: "50,000 ກີບ" },
+            { name: "ຜັດຂີ້ເມົາ ໝູ/ໄກ່", price: "35,000 ກີບ" },
+            { name: "ຜັດຂີ້ເມົາ ງົວ/ທະເລ", price: "40-50k ກີບ" },
+            { name: "ຜັດສະປາເກັດຕີ້", price: "35-50k ກີບ" },
+            { name: "ໝີ່ກອບ ໝູ/ໄກ່", price: "40,000 ກີບ" },
+            { name: "ຜັກປາມຶກໄຂ່ເຄັມ", price: "40,000 ກີບ" },
+            { name: "ເຝີງົວ", price: "40,000 ກີບ" },
+            { name: "ເຂົ້າຊອຍ / ເຂົ້າປຽກ", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າໄຂ່ຈຽວໝູສັບ", price: "35,000 ກີບ" },
+            { name: "ເຂົ້າປຽກທະເລ", price: "50,000 ກີບ" }
+        ];
+
+        let history = JSON.parse(localStorage.getItem('mealPlannerV2')) || [];
+        
+        const randomBtn = document.getElementById('random-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const mealDisplay = document.getElementById('meal-display');
+        const priceTag = document.getElementById('price-tag');
+        const resultContainer = document.getElementById('result-container');
+        const historyList = document.getElementById('history-list');
+        const counter = document.getElementById('counter');
+
+        function updateUI() {
+            counter.innerText = `${history.length}/${mealData.length}`;
+            if (history.length > 0) {
+                historyList.innerHTML = history.map((item, index) => `
+                    <li class="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-left duration-300">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-gray-800 text-sm">${item.name}</span>
+                            <span class="text-[9px] text-gray-400 uppercase tracking-widest">ມື້ທີ ${history.length - index}</span>
+                        </div>
+                        <span class="text-xs font-bold text-indigo-500">${item.price}</span>
+                    </li>
+                `).join('');
+                resultContainer.classList.remove('hidden');
+                mealDisplay.innerText = history[0].name;
+                priceTag.innerText = history[0].price;
+            } else {
+                historyList.innerHTML = '<li class="text-gray-400 text-center py-8 italic text-xs">ຍັງບໍ່ມີຂໍ້ມູນການສຸ່ມ</li>';
+                resultContainer.classList.add('hidden');
+            }
+        }
+
+        randomBtn.onclick = () => {
+            const consumedNames = history.map(h => h.name);
+            const availableMeals = mealData.filter(m => !consumedNames.includes(m.name));
+            
+            if (availableMeals.length === 0) {
+                alert("ທ່ານໄດ້ກິນຄົບທຸກເມນູແລ້ວ! ກົດ Reset ເພື່ອເລີ່ມໃໝ່.");
+                return;
+            }
+
+            randomBtn.disabled = true;
+            let count = 0;
+            const shuffleInterval = setInterval(() => {
+                const tempIndex = Math.floor(Math.random() * availableMeals.length);
+                mealDisplay.innerText = availableMeals[tempIndex].name;
+                priceTag.innerText = availableMeals[tempIndex].price;
+                resultContainer.classList.remove('hidden');
+                count++;
+                if (count > 15) {
+                    clearInterval(shuffleInterval);
+                    const finalMeal = availableMeals[Math.floor(Math.random() * availableMeals.length)];
+                    history.unshift(finalMeal);
+                    localStorage.setItem('mealPlannerV2', JSON.stringify(history));
+                    updateUI();
+                    randomBtn.disabled = false;
+                }
+            }, 50);
+        };
+
+        resetBtn.onclick = () => {
+            if(confirm("ທ່ານຕ້ອງການລ້າງປະຫວັດທັງໝົດເພື່ອເລີ່ມຕົ້ນໃໝ່ບໍ່?")) {
+                history = [];
+                localStorage.removeItem('mealPlannerV2');
+                updateUI();
+            }
+        };
+
+        updateUI();
+    </script>
+</body>
+</html>
