@@ -1,201 +1,930 @@
 <!DOCTYPE html>
-<html lang="lo">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Random ເມນູອາຫານຈານດຽວ 30 ມື້</title>
-    
-    <!-- PWA Meta Tags ເພື່ອໃຫ້ເປັນ App -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MenuRandom">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#4f46e5">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BTC Futures Pro</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<!-- lightweight-charts for real candlestick rendering -->
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{
+  --bg:#0b0e11;--bg2:#161a1f;--bg3:#1a1f26;--bg4:#1f2530;
+  --bgi:#0f1318;--brd:#2a3140;--brd2:#3a4556;
+  --t1:#e8ecf0;--t2:#7f8fa4;--tm:#4a5568;
+  --y:#f0b90b;--yd:rgba(240,185,11,.15);--yg:rgba(240,185,11,.08);
+  --g:#0ecb81;--gd:rgba(14,203,129,.15);
+  --r:#f6465d;--rd:rgba(246,70,93,.15);
+  --b:#4d9af5;--bd:rgba(77,154,245,.15);
+  --o:#f7931a;--od:rgba(247,147,26,.12);
+  --rad:10px;--rads:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;font-size:13px;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px;}
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;700&display=swap');
-        body {
-            font-family: 'Noto Sans Lao', sans-serif;
-            background-color: #f0f2f5;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-        .meal-card {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .meal-card.active {
-            transform: scale(1.02);
-        }
-        /* ຊ່ວຍໃຫ້ເບິ່ງຄື App ຫຼາຍຂຶ້ນໃນມືຖື */
-        @media (display-mode: standalone) {
-            body {
-                padding-top: env(safe-area-inset-top);
-            }
-        }
-    </style>
+/* ─ TOPBAR ─ */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--brd);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:var(--y);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#000;font-weight:700;}
+.logo-text{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:.5px;}
+.logo-sub{color:var(--y);}
+.ticker-wrap{display:flex;align-items:center;gap:14px;}
+.live-badge{display:flex;align-items:center;gap:6px;background:var(--gd);border:1px solid rgba(14,203,129,.3);border-radius:20px;padding:3px 10px;font-size:10px;color:var(--g);font-weight:600;}
+.live-dot{width:6px;height:6px;background:var(--g);border-radius:50%;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.8);}}
+.tick-price{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;transition:color .25s;}
+.tick-chg{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;}
+.up{color:var(--g);background:var(--gd);} .dn{color:var(--r);background:var(--rd);}
+.cur-sw{display:flex;background:var(--bgi);border:1px solid var(--brd);border-radius:var(--rads);overflow:hidden;}
+.cur-btn{padding:5px 12px;border:none;background:transparent;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+.cur-btn.active{background:var(--y);color:#000;}
+.cur-btn:hover:not(.active){color:var(--t1);background:var(--brd);}
+
+/* ─ LAYOUT ─ */
+.main{padding:18px 20px;max-width:1700px;margin:0 auto;}
+.card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--rad);transition:border-color .2s;}
+.card:hover{border-color:var(--brd2);}
+.ch{padding:12px 16px 10px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.ct{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.4px;display:flex;align-items:center;gap:7px;}
+.ic{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;}
+.iy{background:var(--yd);color:var(--y);} .ig{background:var(--gd);color:var(--g);}
+.ib{background:var(--bd);color:var(--b);} .ir{background:var(--rd);color:var(--r);}
+.io{background:var(--od);color:var(--o);}
+.cb{padding:14px 16px;}
+
+/* ─ STAT GRID ─ */
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px;margin-bottom:16px;}
+.sc{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--rad);padding:13px 15px;position:relative;overflow:hidden;transition:all .25s;animation:fin .4s ease both;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac);opacity:0;transition:opacity .3s;}
+.sc:hover{border-color:var(--brd2);transform:translateY(-2px);}
+.sc:hover::before{opacity:1;}
+.sc.ay{--ac:var(--y);} .sc.ag{--ac:var(--g);} .sc.ar{--ac:var(--r);} .sc.ab{--ac:var(--b);} .sc.ao{--ac:var(--o);}
+.sl{font-size:9px;color:var(--tm);font-weight:600;letter-spacing:.9px;text-transform:uppercase;margin-bottom:5px;}
+.sv{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;line-height:1;margin-bottom:2px;transition:color .3s;}
+.ss{font-size:9px;color:var(--tm);}
+
+@keyframes fin{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ─ FORM ─ */
+.fl{font-size:9px;color:var(--tm);letter-spacing:.9px;text-transform:uppercase;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.ig-wrap{display:flex;border:1px solid var(--brd);border-radius:var(--rads);overflow:hidden;transition:border-color .2s;}
+.ig-wrap:focus-within{border-color:var(--y);}
+.ig-wrap input{flex:1;background:var(--bgi);border:none;color:var(--t1);padding:8px 11px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;}
+.ig-wrap input::placeholder{color:var(--tm);}
+.ia{background:var(--bg2);border-left:1px solid var(--brd);padding:8px 11px;color:var(--t2);font-size:10px;font-weight:700;white-space:nowrap;display:flex;align-items:center;min-width:52px;justify-content:center;}
+
+.pt{display:flex;background:var(--bgi);border:1px solid var(--brd);border-radius:var(--rads);overflow:hidden;width:100%;}
+.pb{flex:1;padding:9px;border:none;background:transparent;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+.pb.long.active{background:var(--g);color:#000;} .pb.short.active{background:var(--r);color:#fff;}
+.pb:not(.active){color:var(--tm);}
+.pb:hover:not(.active){background:var(--brd);color:var(--t1);}
+
+.lev-sl{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;
+  background:linear-gradient(to right,var(--y) 0%,var(--y) var(--fill,7%),var(--brd) var(--fill,7%),var(--brd) 100%);
+  outline:none;cursor:pointer;}
+.lev-sl::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--y);cursor:pointer;border:2px solid var(--bg);box-shadow:0 0 6px rgba(240,185,11,.4);}
+
+.btn-add{width:100%;padding:10px;background:var(--y);color:#000;border:none;border-radius:var(--rads);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-add:hover{background:#d9a60a;transform:translateY(-1px);box-shadow:0 4px 14px var(--yg);}
+.btn-ghost{padding:7px 13px;background:transparent;color:var(--t2);border:1px solid var(--brd);border-radius:var(--rads);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.btn-ghost:hover{border-color:var(--t2);color:var(--t1);}
+.btn-ghost.full{width:100%;justify-content:center;}
+
+.divider{display:flex;align-items:center;gap:9px;margin:13px 0 9px;}
+.divider span{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--tm);font-weight:600;white-space:nowrap;}
+.divider::after{content:'';flex:1;height:1px;background:var(--brd);}
+
+/* ─ RISK ─ */
+.risk-bar{height:7px;background:var(--bgi);border-radius:3px;overflow:hidden;margin-top:5px;}
+.risk-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1),background .4s;}
+.risk-lbl{display:flex;justify-content:space-between;margin-top:5px;font-size:9px;color:var(--tm);}
+
+/* ─ CHART ─ */
+.chart-container{height:340px;position:relative;}
+#chartDiv{width:100%;height:100%;border-radius:0 0 var(--rad) var(--rad);overflow:hidden;}
+.chart-toolbar{display:flex;gap:5px;align-items:center;}
+.tf-btn{padding:3px 9px;background:transparent;border:1px solid var(--brd);border-radius:4px;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;}
+.tf-btn.active,.tf-btn:hover{background:var(--yd);border-color:var(--y);color:var(--y);}
+
+/* ─ LEGEND ─ */
+.leg{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px 12px;}
+.leg-item{font-size:10px;font-weight:600;padding:2px 9px;border-radius:4px;display:flex;align-items:center;gap:5px;}
+
+/* ─ DCA TABLE ─ */
+.dca-tbl{width:100%;border-collapse:collapse;}
+.dca-tbl th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--tm);padding:6px 10px;text-align:left;border-bottom:1px solid var(--brd);font-weight:600;}
+.dca-tbl td{padding:8px 10px;border-bottom:1px solid rgba(42,49,64,.4);font-size:11px;color:var(--t2);vertical-align:middle;}
+.dca-tbl tr:last-child td{border-bottom:none;}
+.dca-tbl tr:hover td{background:var(--bg4);}
+.rm-btn{background:none;border:none;color:var(--tm);cursor:pointer;padding:2px 6px;border-radius:3px;transition:all .2s;font-size:11px;}
+.rm-btn:hover{background:var(--rd);color:var(--r);}
+.dca-scroll{max-height:230px;overflow-y:auto;}
+
+/* ─ SUMMARY ─ */
+.sr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(42,49,64,.4);}
+.sr:last-child{border-bottom:none;}
+.sk{font-size:10px;color:var(--tm);}
+.sv2{font-size:11px;font-weight:600;color:var(--t1);}
+
+/* ─ TOAST ─ */
+.tc{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:7px;}
+.tm2{background:var(--bg3);border:1px solid var(--brd2);border-radius:var(--rad);padding:11px 15px;font-size:11px;display:flex;align-items:center;gap:9px;animation:tin .3s ease;box-shadow:0 8px 28px rgba(0,0,0,.5);min-width:230px;}
+@keyframes tin{from{opacity:0;transform:translateX(28px);}to{opacity:1;transform:translateX(0);}}
+@keyframes tout{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(28px);}}
+@keyframes blink{0%{opacity:1;}35%{opacity:.35;}100%{opacity:1;}}
+.blink{animation:blink .3s ease;}
+
+/* ─ EMPTY ─ */
+.empty{text-align:center;padding:36px 16px;color:var(--tm);}
+.empty i{font-size:32px;margin-bottom:10px;display:block;opacity:.25;}
+.empty p{font-size:11px;line-height:1.8;}
+
+/* ─ RESPONSIVE ─ */
+@media(max-width:768px){
+  .topbar{padding:0 12px;flex-wrap:wrap;height:auto;padding:8px 12px;gap:8px;}
+  .main{padding:12px;}
+  .sg{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .tick-price{font-size:17px;}
+  .chart-container{height:240px;}
+}
+@media(max-width:480px){
+  .sg{grid-template-columns:repeat(2,1fr);}
+  .cur-btn{padding:4px 7px;font-size:10px;}
+}
+</style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-md mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-indigo-800 mb-2">🍽️ ເມນູມື້ນີ້</h1>
-            <p class="text-gray-500 font-medium italic text-sm">ຊ່ວງເວລາທອງ: 10:00 - 12:00</p>
-        </div>
+<body>
 
-        <!-- Display Card -->
-        <div id="result-container" class="hidden bg-white rounded-3xl shadow-2xl p-8 mb-8 border-b-8 border-indigo-600 meal-card active">
-            <div class="flex justify-between items-start mb-4">
-                <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">ເມນູແນະນຳ</span>
-                <span id="price-tag" class="text-green-600 font-bold text-lg"></span>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">₿</div>
+    <div class="logo-text">FUTURES <span class="logo-sub">PRO</span></div>
+  </div>
+  <div class="ticker-wrap">
+    <div class="live-badge"><div class="live-dot"></div><span>LIVE</span></div>
+    <div id="tickPrice" class="tick-price">—</div>
+    <div id="tickChg" class="tick-chg up">+0.00%</div>
+    <div id="tickVol" style="font-size:10px;color:var(--tm)">Vol —</div>
+  </div>
+  <div class="cur-sw">
+    <button class="cur-btn active" onclick="setCurrency('USDT')">USDT</button>
+    <button class="cur-btn" onclick="setCurrency('BTC')">BTC</button>
+    <button class="cur-btn" onclick="setCurrency('SATS')">SATS</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STAT CARDS -->
+  <div class="sg" id="statGrid">
+    <div class="sc ay">
+      <div class="sl">Mark Price</div>
+      <div class="sv" id="sMarkPrice">—</div>
+      <div class="ss">BTC/USDT Perp</div>
+    </div>
+    <div class="sc ag">
+      <div class="sl">Unrealized PNL</div>
+      <div class="sv" id="sPNL">—</div>
+      <div class="ss" id="sROI">ROI —</div>
+    </div>
+    <div class="sc ar">
+      <div class="sl">Liq. Price</div>
+      <div class="sv" id="sLiq">—</div>
+      <div class="ss" id="sLiqDist">Dist. —</div>
+    </div>
+    <div class="sc ab">
+      <div class="sl">Position Size</div>
+      <div class="sv" id="sPosSize">—</div>
+      <div class="ss" id="sPosNotional">— notional</div>
+    </div>
+    <div class="sc ao">
+      <div class="sl">Avg Entry</div>
+      <div class="sv" id="sAvgEntry">—</div>
+      <div class="ss" id="sBE">BE: —</div>
+    </div>
+    <div class="sc">
+      <div class="sl">Risk Level</div>
+      <div class="sv" id="sRisk">—</div>
+      <div class="risk-bar"><div class="risk-fill" id="riskFill" style="width:0%"></div></div>
+      <div class="risk-lbl">
+        <span>Safe</span><span id="riskPct">—</span><span>Danger</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- INPUT PANEL -->
+    <div class="col-lg-4 col-xl-3">
+      <div class="card">
+        <div class="ch">
+          <div class="ct"><span class="ic iy"><i class="fas fa-sliders"></i></span> Position Setup</div>
+          <button class="btn-ghost" onclick="clearAll()"><i class="fas fa-trash-alt"></i></button>
+        </div>
+        <div class="cb">
+
+          <div class="mb-3">
+            <div class="fl">Position Type</div>
+            <div class="pt">
+              <button class="pb long active" id="btnLong" onclick="setPositionType('LONG')">▲ LONG</button>
+              <button class="pb short" id="btnShort" onclick="setPositionType('SHORT')">▼ SHORT</button>
             </div>
-            <div id="meal-display" class="text-3xl font-bold text-gray-900 leading-tight mb-4">...</div>
-            <div class="flex items-center text-gray-400 text-xs">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>ຢ່າລືມດື່ມນ້ຳກ່ອນກິນເຂົ້າ</span>
+          </div>
+
+          <div class="mb-3">
+            <div class="fl">Entry Price <span id="epUnit" style="color:var(--y)">USDT</span></div>
+            <div class="ig-wrap">
+              <input type="number" id="entryPrice" placeholder="e.g. 105000" step="0.01" min="0"/>
+              <div class="ia" id="epAddon">USDT</div>
             </div>
-        </div>
+            <div style="margin-top:4px;font-size:9px;color:var(--tm)" id="epHint"></div>
+          </div>
 
-        <!-- Main Button -->
-        <button id="random-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-lg active:scale-95 transition-all text-xl mb-6 flex items-center justify-center gap-3">
-            <span>🎲</span> Random ເມນູມື້ນີ້
-        </button>
-
-        <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
-                <div class="text-gray-400 text-[10px] mb-1 uppercase font-bold tracking-tighter">ກິນແລ້ວ</div>
-                <div id="counter" class="text-2xl font-black text-indigo-600">0/36</div>
+          <div class="mb-3">
+            <div class="fl">Margin Amount <span id="mgUnit" style="color:var(--y)">USDT</span></div>
+            <div class="ig-wrap">
+              <input type="number" id="marginAmount" placeholder="e.g. 200" step="0.01" min="0"/>
+              <div class="ia" id="mgAddon">USDT</div>
             </div>
-            <button id="reset-btn" class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 hover:bg-red-50 hover:border-red-200 transition-colors group">
-                <div class="text-gray-400 text-[10px] mb-1 uppercase font-bold tracking-tighter group-hover:text-red-400">ເລີ່ມໃໝ່</div>
-                <div class="text-xl font-black text-gray-300 group-hover:text-red-500 uppercase">Reset</div>
-            </button>
-        </div>
+          </div>
 
-        <!-- History Section -->
-        <div class="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-white">
-            <h3 class="font-bold text-gray-600 mb-4 flex items-center gap-2 text-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                ປະຫວັດການກິນ (30 ມື້ຫຼ້າສຸດ)
-            </h3>
-            <ul id="history-list" class="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                <li class="text-gray-400 text-center py-8 italic text-xs">ຍັງບໍ່ມີຂໍ້ມູນການສຸ່ມ</li>
-            </ul>
+          <div class="mb-3">
+            <div class="fl">Leverage <span id="levVal" style="color:var(--y);font-weight:700">10×</span></div>
+            <input type="range" class="lev-sl" id="levSlider" min="1" max="125" value="10"
+              oninput="onLevChange(this.value)" style="--fill:7.3%"/>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--tm)">
+              <span>1×</span><span>25×</span><span>50×</span><span>75×</span><span>125×</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="fl">Maintenance Margin Rate</div>
+            <div class="ig-wrap">
+              <input type="number" id="mmRate" value="0.50" step="0.01" min="0.01" max="100"/>
+              <div class="ia">%</div>
+            </div>
+          </div>
+
+          <button class="btn-add mt-1" onclick="addPosition()">
+            <i class="fas fa-plus-circle"></i> ADD POSITION
+          </button>
+
+          <div class="divider"><span>DCA Entry</span></div>
+
+          <div class="mb-3">
+            <div class="fl">DCA Entry Price <span id="dcaEpUnit" style="color:var(--y)">USDT</span></div>
+            <div class="ig-wrap">
+              <input type="number" id="dcaEntry" placeholder="DCA price" step="0.01" min="0"/>
+              <div class="ia" id="dcaEpAddon">USDT</div>
+            </div>
+            <div style="margin-top:4px;font-size:9px;color:var(--tm)" id="dcaEpHint"></div>
+          </div>
+
+          <div class="mb-3">
+            <div class="fl">DCA Margin <span id="dcaMgUnit" style="color:var(--y)">USDT</span></div>
+            <div class="ig-wrap">
+              <input type="number" id="dcaMargin" placeholder="DCA margin" step="0.01" min="0"/>
+              <div class="ia" id="dcaMgAddon">USDT</div>
+            </div>
+          </div>
+
+          <button class="btn-ghost full" onclick="addDCA()">
+            <i class="fas fa-layer-group"></i> ADD DCA ENTRY
+          </button>
+
         </div>
+      </div>
     </div>
 
-    <script>
-        const mealData = [
-            { name: "ເຂົ້າຜັດ ໝູ/ໄກ່", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຜັດ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຜັດ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າສະເຕັກ ໝູ/ໄກ່", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າສະເຕັກ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າສະເຕັກ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າກະເພົາ ໝູ/ໄກ່", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າກະເພົາ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າກະເພົາ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າພິກໄທດຳ ໝູ/ໄກ່", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າພິກໄທດຳ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າພິກໄທດຳ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຜົງກະຫຣີ ໝູ/ໄກ່", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຜົງກະຫຣີ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຜົງກະຫຣີ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າຄະນ້າໝູກອບ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຄະນ້າ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຄະນ້າ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຂີງ ໝູ/ໄກ່", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຂີງ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຂີງ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຜັກລວມ ໝູ/ໄກ່", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຜັກລວມ ງົວ", price: "40,000 ກີບ" },
-            { name: "ເຂົ້າຜັດຜັກລວມ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ສຸກີ້ນ້ຳ/ແຫ້ງ ໝູ/ໄກ່", price: "40,000 ກີບ" },
-            { name: "ສຸກີ້ນ້ຳ/ແຫ້ງ ງົວ", price: "45,000 ກີບ" },
-            { name: "ສຸກີ້ນ້ຳ/ແຫ້ງ ທະເລ", price: "50,000 ກີບ" },
-            { name: "ຜັດຂີ້ເມົາ ໝູ/ໄກ່", price: "35,000 ກີບ" },
-            { name: "ຜັດຂີ້ເມົາ ງົວ/ທະເລ", price: "40-50k ກີບ" },
-            { name: "ຜັດສະປາເກັດຕີ້", price: "35-50k ກີບ" },
-            { name: "ໝີ່ກອບ ໝູ/ໄກ່", price: "40,000 ກີບ" },
-            { name: "ຜັກປາມຶກໄຂ່ເຄັມ", price: "40,000 ກີບ" },
-            { name: "ເຝີງົວ", price: "45,000 ກີບ" },
-            { name: "ເຂົ້າຊອຍ / ເຂົ້າປຽກ", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າໄຂ່ຈຽວໝູສັບ", price: "35,000 ກີບ" },
-            { name: "ເຂົ້າປຽກທະເລ", price: "50,000 ກີບ" }
-        ];
+    <!-- RIGHT PANEL -->
+    <div class="col-lg-8 col-xl-9">
 
-        let history = JSON.parse(localStorage.getItem('mealPlannerV2')) || [];
-        
-        const randomBtn = document.getElementById('random-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const mealDisplay = document.getElementById('meal-display');
-        const priceTag = document.getElementById('price-tag');
-        const resultContainer = document.getElementById('result-container');
-        const historyList = document.getElementById('history-list');
-        const counter = document.getElementById('counter');
+      <!-- CHART CARD -->
+      <div class="card mb-3">
+        <div class="ch">
+          <div class="ct"><span class="ic ib"><i class="fas fa-chart-candlestick"></i></span> BTC/USDT Perpetual · Binance</div>
+          <div class="chart-toolbar">
+            <button class="tf-btn" onclick="setTF('1m')">1m</button>
+            <button class="tf-btn active" onclick="setTF('5m')">5m</button>
+            <button class="tf-btn" onclick="setTF('15m')">15m</button>
+            <button class="tf-btn" onclick="setTF('1h')">1h</button>
+            <button class="tf-btn" onclick="setTF('4h')">4h</button>
+            <span id="chartTs" style="font-size:9px;color:var(--tm);margin-left:6px"></span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div id="chartDiv"></div>
+        </div>
+        <div class="leg" id="chartLeg">
+          <span class="leg-item" style="background:rgba(77,154,245,.1);color:#4d9af5">● Mark Price</span>
+          <span class="leg-item" style="background:rgba(240,185,11,.1);color:#f0b90b" id="legEntry">● Entry —</span>
+          <span class="leg-item" style="background:rgba(247,147,26,.1);color:#f7931a" id="legAvg">● Avg Entry —</span>
+          <span class="leg-item" style="background:rgba(246,70,93,.1);color:#f6465d" id="legLiq">● Liq. Price —</span>
+          <span class="leg-item" style="background:rgba(14,203,129,.1);color:#0ecb81" id="legBE">● Break-even —</span>
+        </div>
+      </div>
 
-        function updateUI() {
-            counter.innerText = `${history.length}/${mealData.length}`;
-            if (history.length > 0) {
-                historyList.innerHTML = history.map((item, index) => `
-                    <li class="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-left duration-300">
-                        <div class="flex flex-col">
-                            <span class="font-bold text-gray-800 text-sm">${item.name}</span>
-                            <span class="text-[9px] text-gray-400 uppercase tracking-widest">ມື້ທີ ${history.length - index}</span>
-                        </div>
-                        <span class="text-xs font-bold text-indigo-500">${item.price}</span>
-                    </li>
-                `).join('');
-                resultContainer.classList.remove('hidden');
-                mealDisplay.innerText = history[0].name;
-                priceTag.innerText = history[0].price;
-            } else {
-                historyList.innerHTML = '<li class="text-gray-400 text-center py-8 italic text-xs">ຍັງບໍ່ມີຂໍ້ມູນການສຸ່ມ</li>';
-                resultContainer.classList.add('hidden');
-            }
-        }
+      <div class="row g-3">
+        <!-- DCA TABLE -->
+        <div class="col-md-7">
+          <div class="card h-100" style="display:flex;flex-direction:column">
+            <div class="ch">
+              <div class="ct"><span class="ic io"><i class="fas fa-layer-group"></i></span> DCA Entries</div>
+              <span id="dcaCount" style="font-size:9px;color:var(--tm)">0 entries</span>
+            </div>
+            <div class="dca-scroll flex-grow-1">
+              <div class="empty" id="dcaEmpty">
+                <i class="fas fa-inbox"></i>
+                <p>No position yet.<br>Fill the form &amp; click<br><strong>ADD POSITION</strong></p>
+              </div>
+              <table class="dca-tbl" id="dcaTable" style="display:none">
+                <thead><tr>
+                  <th>#</th><th>Entry</th><th>Margin</th><th>Size</th><th>Lev</th><th></th>
+                </tr></thead>
+                <tbody id="dcaBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-        randomBtn.onclick = () => {
-            const consumedNames = history.map(h => h.name);
-            const availableMeals = mealData.filter(m => !consumedNames.includes(m.name));
-            
-            if (availableMeals.length === 0) {
-                alert("ທ່ານໄດ້ກິນຄົບທຸກເມນູແລ້ວ! ກົດ Reset ເພື່ອເລີ່ມໃໝ່.");
-                return;
-            }
+        <!-- SUMMARY -->
+        <div class="col-md-5">
+          <div class="card h-100">
+            <div class="ch">
+              <div class="ct"><span class="ic ig"><i class="fas fa-file-invoice-dollar"></i></span> Position Summary</div>
+              <span id="posTypeLbl" style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:4px;background:var(--gd);color:var(--g)">LONG</span>
+            </div>
+            <div class="cb" id="summaryBody">
+              <div class="empty" style="padding:26px 10px">
+                <i class="fas fa-chart-bar"></i><p>No active position</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-            randomBtn.disabled = true;
-            let count = 0;
-            const shuffleInterval = setInterval(() => {
-                const tempIndex = Math.floor(Math.random() * availableMeals.length);
-                mealDisplay.innerText = availableMeals[tempIndex].name;
-                priceTag.innerText = availableMeals[tempIndex].price;
-                resultContainer.classList.remove('hidden');
-                count++;
-                if (count > 15) {
-                    clearInterval(shuffleInterval);
-                    const finalMeal = availableMeals[Math.floor(Math.random() * availableMeals.length)];
-                    history.unshift(finalMeal);
-                    localStorage.setItem('mealPlannerV2', JSON.stringify(history));
-                    updateUI();
-                    randomBtn.disabled = false;
-                }
-            }, 50);
-        };
+<div class="tc" id="toastWrap"></div>
 
-        resetBtn.onclick = () => {
-            if(confirm("ທ່ານຕ້ອງການລ້າງປະຫວັດທັງໝົດເພື່ອເລີ່ມຕົ້ນໃໝ່ບໍ່?")) {
-                history = [];
-                localStorage.removeItem('mealPlannerV2');
-                updateUI();
-            }
-        };
+<script>
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+const LS = 'btcfpro_v4';
+let S = {
+  currency: 'USDT',
+  positionType: 'LONG',
+  leverage: 10,
+  markPrice: 0,
+  prevPrice: 0,
+  open24h: 0,
+  entries: [],   // {entryPriceUSDT, marginUSDT, leverage}
+};
 
-        updateUI();
-    </script>
+function save(){
+  try{ localStorage.setItem(LS, JSON.stringify({
+    currency:S.currency, positionType:S.positionType,
+    leverage:S.leverage, entries:S.entries
+  })); }catch(e){}
+}
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(LS)||'{}');
+    if(d.currency) S.currency=d.currency;
+    if(d.positionType) S.positionType=d.positionType;
+    if(d.leverage) S.leverage=d.leverage;
+    if(Array.isArray(d.entries)) S.entries=d.entries;
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════
+//  CURRENCY HELPERS
+//  All internal values stored in USDT.
+//  Display converts on-the-fly.
+// ═══════════════════════════════════════════════════
+function unitLabel(){ return S.currency; }
+
+// Convert USDT → display currency
+function toDisplay(usdt){
+  if(!isFinite(usdt)||isNaN(usdt)) return null;
+  if(S.currency==='BTC') return usdt/(S.markPrice||1);
+  if(S.currency==='SATS') return Math.round((usdt/(S.markPrice||1))*1e8);
+  return usdt;
+}
+// Convert price (USDT) → display — prices are always USDT but shown converted
+function toDisplayPrice(usdt){
+  return toDisplay(usdt);
+}
+
+// Format display value with unit
+function fmt(usdt, forceDecimals){
+  const v = toDisplay(usdt);
+  if(v===null) return '—';
+  if(S.currency==='USDT'){
+    const d = forceDecimals!==undefined ? forceDecimals : 2;
+    return '$'+v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+  }
+  if(S.currency==='BTC') return v.toFixed(6)+' BTC';
+  if(S.currency==='SATS') return v.toLocaleString()+' sats';
+  return v;
+}
+
+// Format price (same but for price-values)
+function fmtP(usdt){
+  if(!isFinite(usdt)||isNaN(usdt)) return '—';
+  if(S.currency==='USDT') return '$'+usdt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(S.currency==='BTC') return (usdt/(S.markPrice||1)).toFixed(6)+' BTC';
+  if(S.currency==='SATS') return Math.round((usdt/(S.markPrice||1))*1e8).toLocaleString()+' sats';
+  return usdt.toFixed(2);
+}
+
+// Parse user input → USDT (input is in current display currency)
+function inputToUSDT(val){
+  if(!isFinite(val)||isNaN(val)) return NaN;
+  if(S.currency==='USDT') return val;
+  if(S.currency==='BTC')  return val*(S.markPrice||1);
+  if(S.currency==='SATS') return (val/1e8)*(S.markPrice||1);
+  return val;
+}
+
+// Update addon labels when currency changes
+function updateAddonLabels(){
+  const u = S.currency;
+  ['epAddon','mgAddon','dcaEpAddon','dcaMgAddon'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=u;
+  });
+  ['epUnit','mgUnit','dcaEpUnit','dcaMgUnit'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=u;
+  });
+  // Update hints
+  updateInputHints();
+}
+
+function updateInputHints(){
+  const ep = S.entries.length ? S.entries[0].entryPriceUSDT : null;
+  if(ep && S.markPrice){
+    const d = document.getElementById('epHint');
+    if(d){
+      const conv = S.currency==='USDT'?`≈ $${ep.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`:
+                   S.currency==='BTC'?`≈ ${(ep/S.markPrice).toFixed(6)} BTC`:
+                   `≈ ${Math.round((ep/S.markPrice)*1e8).toLocaleString()} sats`;
+      d.textContent='';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  BINANCE WEBSOCKET — TICKER
+// ═══════════════════════════════════════════════════
+let wsTickerConn = null;
+function startTickerWS(){
+  if(wsTickerConn) try{wsTickerConn.close();}catch(e){}
+  wsTickerConn = new WebSocket('wss://fstream.binance.com/ws/btcusdt@ticker');
+  wsTickerConn.onmessage = ev => {
+    try{
+      const d = JSON.parse(ev.data);
+      S.prevPrice = S.markPrice;
+      S.markPrice = parseFloat(d.c);
+      S.open24h   = parseFloat(d.o);
+      const vol24h = parseFloat(d.q);
+      const chg = ((S.markPrice - S.open24h)/S.open24h)*100;
+      updateTickerUI(S.markPrice, chg, vol24h);
+      recalcAll();
+    }catch(e){}
+  };
+  wsTickerConn.onclose = ()=>setTimeout(startTickerWS, 3000);
+  wsTickerConn.onerror = ()=>{ try{wsTickerConn.close();}catch(e){} };
+}
+
+function updateTickerUI(price, chg, vol24h){
+  const el = document.getElementById('tickPrice');
+  el.textContent = '$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(S.prevPrice && price!==S.prevPrice){ el.classList.remove('blink'); void el.offsetWidth; el.classList.add('blink'); }
+  el.style.color = price>=S.prevPrice ? 'var(--g)' : 'var(--r)';
+  const chEl = document.getElementById('tickChg');
+  chEl.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';
+  chEl.className='tick-chg '+(chg>=0?'up':'dn');
+  if(vol24h){
+    const vEl=document.getElementById('tickVol');
+    if(vEl) vEl.textContent='Vol $'+(vol24h/1e9).toFixed(2)+'B';
+  }
+  document.getElementById('sMarkPrice').textContent=
+    '$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ═══════════════════════════════════════════════════
+//  LIGHTWEIGHT CHARTS — CANDLESTICK (Binance Kline)
+// ═══════════════════════════════════════════════════
+let lwChart=null, candleSeries=null, entryLine=null, avgLine=null, liqLine=null, beLine=null;
+let wsTF = '5m';
+let wsKlineConn = null;
+
+const TF_MAP = { '1m':60,'5m':300,'15m':900,'1h':3600,'4h':14400 };
+
+function initChart(){
+  const container = document.getElementById('chartDiv');
+  lwChart = LightweightCharts.createChart(container, {
+    width: container.offsetWidth,
+    height: container.offsetHeight||340,
+    layout: { background:{type:'Solid',color:'#1a1f26'}, textColor:'#7f8fa4' },
+    grid: { vertLines:{color:'#2a3140'}, horzLines:{color:'#2a3140'} },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine:{color:'#3a4556',labelBackgroundColor:'#1a1f26'},
+      horzLine:{color:'#3a4556',labelBackgroundColor:'#1a1f26'} },
+    rightPriceScale: { borderColor:'#2a3140', textColor:'#7f8fa4' },
+    timeScale: { borderColor:'#2a3140', timeVisible:true, secondsVisible:false },
+    handleScroll: true, handleScale: true,
+  });
+
+  candleSeries = lwChart.addCandlestickSeries({
+    upColor:'#0ecb81', downColor:'#f6465d',
+    borderUpColor:'#0ecb81', borderDownColor:'#f6465d',
+    wickUpColor:'#0ecb81', wickDownColor:'#f6465d',
+  });
+
+  // Price lines for positions
+  entryLine = null; avgLine = null; liqLine = null; beLine = null;
+
+  // Resize observer
+  const ro = new ResizeObserver(()=>{
+    if(lwChart && container.offsetWidth>0)
+      lwChart.applyOptions({width:container.offsetWidth,height:container.offsetHeight||340});
+  });
+  ro.observe(container);
+
+  loadKlineHistory(wsTF).then(()=>startKlineWS(wsTF));
+}
+
+async function loadKlineHistory(tf){
+  try{
+    const limit = 200;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${tf}&limit=${limit}`;
+    const res = await fetch(url);
+    const raw = await res.json();
+    const data = raw.map(k=>({
+      time: Math.floor(k[0]/1000),
+      open: parseFloat(k[1]),
+      high: parseFloat(k[2]),
+      low:  parseFloat(k[3]),
+      close:parseFloat(k[4]),
+    }));
+    candleSeries.setData(data);
+    lwChart.timeScale().fitContent();
+    document.getElementById('chartTs').textContent=tf.toUpperCase()+' · Binance Futures';
+  }catch(e){ console.warn('Kline fetch err',e); }
+}
+
+function startKlineWS(tf){
+  if(wsKlineConn) try{wsKlineConn.close();}catch(e){}
+  wsKlineConn = new WebSocket(`wss://fstream.binance.com/ws/btcusdt@kline_${tf}`);
+  wsKlineConn.onmessage = ev => {
+    try{
+      const d = JSON.parse(ev.data);
+      const k = d.k;
+      candleSeries.update({
+        time:  Math.floor(k.t/1000),
+        open:  parseFloat(k.o),
+        high:  parseFloat(k.h),
+        low:   parseFloat(k.l),
+        close: parseFloat(k.c),
+      });
+    }catch(e){}
+  };
+  wsKlineConn.onclose = ()=>setTimeout(()=>startKlineWS(tf), 3000);
+  wsKlineConn.onerror = ()=>{ try{wsKlineConn.close();}catch(e){} };
+}
+
+function setTF(tf){
+  wsTF = tf;
+  document.querySelectorAll('.tf-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent===tf);
+  });
+  if(wsKlineConn) try{wsKlineConn.close();}catch(e){}
+  loadKlineHistory(tf).then(()=>startKlineWS(tf));
+}
+
+// ── Price line helpers ──
+function removePriceLine(ref){ if(ref && candleSeries){ try{candleSeries.removePriceLine(ref);}catch(e){} } return null; }
+function addPriceLine(price, color, title, dash=false){
+  if(!candleSeries||!isFinite(price)) return null;
+  return candleSeries.createPriceLine({
+    price, color, lineWidth:1,
+    lineStyle: dash ? LightweightCharts.LineStyle.Dashed : LightweightCharts.LineStyle.Solid,
+    axisLabelVisible:true, title,
+  });
+}
+
+function updateChartLines(calc){
+  entryLine = removePriceLine(entryLine);
+  avgLine   = removePriceLine(avgLine);
+  liqLine   = removePriceLine(liqLine);
+  beLine    = removePriceLine(beLine);
+  if(!calc) return;
+  if(S.entries.length){
+    entryLine = addPriceLine(S.entries[0].entryPriceUSDT, '#f0b90b', 'Entry', true);
+  }
+  avgLine = addPriceLine(calc.avgEntry, '#f7931a', 'Avg Entry', true);
+  liqLine = addPriceLine(calc.liqPrice, '#f6465d', 'Liq', false);
+  beLine  = addPriceLine(calc.breakEven,'#0ecb81', 'B/E', true);
+
+  // Update legend
+  document.getElementById('legEntry').textContent = '● Entry '+(S.entries.length? fmtP(S.entries[0].entryPriceUSDT):'—');
+  document.getElementById('legAvg').textContent   = '● Avg '  +fmtP(calc.avgEntry);
+  document.getElementById('legLiq').textContent   = '● Liq '  +fmtP(calc.liqPrice);
+  document.getElementById('legBE').textContent    = '● B/E '  +fmtP(calc.breakEven);
+}
+
+// ═══════════════════════════════════════════════════
+//  LIQUIDATION PRICE — Binance Formula
+//  https://www.binance.com/en/support/faq/b3c689c1f50a44cabb3a84e663b81d93
+//
+//  Isolated Margin:
+//  LONG:  Liq = Entry × (1 - IMR + MMR)
+//         where IMR = 1/leverage
+//  SHORT: Liq = Entry × (1 + IMR - MMR)
+//
+//  For multi-entry DCA (weighted):
+//  Use avgEntry instead of single entry price
+// ═══════════════════════════════════════════════════
+function calcPosition(){
+  if(!S.entries.length||!S.markPrice) return null;
+
+  let totalNotional=0, totalMargin=0, totalSizeBTC=0;
+  S.entries.forEach(e=>{
+    const notional = e.marginUSDT * e.leverage;
+    totalNotional += notional;
+    totalMargin   += e.marginUSDT;
+    totalSizeBTC  += notional / e.entryPriceUSDT;
+  });
+
+  const avgEntry = totalNotional / totalSizeBTC;
+  const effLev   = totalNotional / totalMargin;   // effective leverage
+  const mmRate   = parseFloat(document.getElementById('mmRate').value)||0.5;
+  const MMR      = mmRate / 100;
+  const IMR      = 1 / effLev;   // Initial Margin Rate
+
+  // ── CORRECT Binance Isolated Liq formula ──
+  let liqPrice;
+  if(S.positionType==='LONG'){
+    liqPrice = avgEntry * (1 - IMR + MMR);
+  } else {
+    liqPrice = avgEntry * (1 + IMR - MMR);
+  }
+
+  // PNL
+  const pnl = S.positionType==='LONG'
+    ? (S.markPrice - avgEntry) * totalSizeBTC
+    : (avgEntry - S.markPrice) * totalSizeBTC;
+  const roi = (pnl / totalMargin)*100;
+
+  // Distance to liq
+  const liqDist = S.positionType==='LONG'
+    ? ((S.markPrice - liqPrice)/S.markPrice)*100
+    : ((liqPrice - S.markPrice)/S.markPrice)*100;
+  const liqDistSafe = Math.max(0, liqDist);
+
+  // Break-even (taker fee both sides = 0.04%)
+  const fee = totalNotional * 0.0004 * 2;
+  const breakEven = S.positionType==='LONG'
+    ? avgEntry + fee/totalSizeBTC
+    : avgEntry - fee/totalSizeBTC;
+
+  // Risk
+  let risk='SAFE', riskPct=Math.max(5, Math.min(45, 50-liqDistSafe*2));
+  if(liqDistSafe<3)      { risk='DANGER';  riskPct=95; }
+  else if(liqDistSafe<8) { risk='WARNING'; riskPct=58; }
+
+  return { avgEntry,totalSizeBTC,totalMargin,totalNotional,effLev,pnl,roi,liqPrice,liqDist:liqDistSafe,breakEven,risk,riskPct,mmRate };
+}
+
+// ═══════════════════════════════════════════════════
+//  UI RENDER
+// ═══════════════════════════════════════════════════
+function recalcAll(){
+  const c = calcPosition();
+  renderStats(c);
+  renderDCATable();
+  renderSummary(c);
+  updateChartLines(c);
+}
+
+function renderStats(c){
+  if(!c){
+    ['sPNL','sROI','sLiq','sLiqDist','sPosSize','sPosNotional','sAvgEntry','sBE','sRisk'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.textContent='—';
+    });
+    document.getElementById('riskFill').style.width='0%';
+    document.getElementById('riskPct').textContent='—';
+    return;
+  }
+  const pEl=document.getElementById('sPNL');
+  pEl.textContent=fmt(c.pnl);
+  pEl.style.color=c.pnl>=0?'var(--g)':'var(--r)';
+  document.getElementById('sROI').textContent='ROI '+(c.roi>=0?'+':'')+c.roi.toFixed(2)+'%';
+  document.getElementById('sLiq').textContent=fmtP(c.liqPrice);
+  document.getElementById('sLiqDist').textContent='Dist. '+c.liqDist.toFixed(2)+'%';
+
+  // Position size in selected currency
+  if(S.currency==='USDT'){
+    document.getElementById('sPosSize').textContent=c.totalSizeBTC.toFixed(4)+' BTC';
+  } else if(S.currency==='BTC'){
+    document.getElementById('sPosSize').textContent=c.totalSizeBTC.toFixed(6)+' BTC';
+  } else {
+    document.getElementById('sPosSize').textContent=Math.round(c.totalSizeBTC*1e8).toLocaleString()+' sats';
+  }
+  document.getElementById('sPosNotional').textContent=fmt(c.totalNotional)+' notional';
+  document.getElementById('sAvgEntry').textContent=fmtP(c.avgEntry);
+  document.getElementById('sBE').textContent='BE: '+fmtP(c.breakEven);
+
+  const rEl=document.getElementById('sRisk');
+  rEl.textContent=c.risk;
+  const rc={SAFE:'var(--g)',WARNING:'var(--o)',DANGER:'var(--r)'};
+  rEl.style.color=rc[c.risk];
+  const fill=document.getElementById('riskFill');
+  fill.style.width=c.riskPct+'%';
+  fill.style.background=rc[c.risk];
+  document.getElementById('riskPct').textContent=c.liqDist.toFixed(1)+'%';
+}
+
+function renderDCATable(){
+  const empty=document.getElementById('dcaEmpty');
+  const tbl=document.getElementById('dcaTable');
+  const body=document.getElementById('dcaBody');
+  document.getElementById('dcaCount').textContent=S.entries.length+' entr'+(S.entries.length===1?'y':'ies');
+  if(!S.entries.length){ empty.style.display=''; tbl.style.display='none'; return; }
+  empty.style.display='none'; tbl.style.display='';
+  body.innerHTML=S.entries.map((e,i)=>{
+    const sizeBTC=(e.marginUSDT*e.leverage)/e.entryPriceUSDT;
+    // Show entry and margin in selected currency
+    const epDisp = fmtP(e.entryPriceUSDT);
+    const mgDisp = fmt(e.marginUSDT);
+    let sizeDisp;
+    if(S.currency==='USDT') sizeDisp=sizeBTC.toFixed(4)+' BTC';
+    else if(S.currency==='BTC') sizeDisp=sizeBTC.toFixed(6)+' BTC';
+    else sizeDisp=Math.round(sizeBTC*1e8).toLocaleString()+' sats';
+    return `<tr>
+      <td style="color:var(--tm)">#${i+1}</td>
+      <td style="color:var(--t1);font-weight:600">${epDisp}</td>
+      <td>${mgDisp}</td>
+      <td style="color:var(--y)">${sizeDisp}</td>
+      <td style="color:var(--b)">${e.leverage}×</td>
+      <td><button class="rm-btn" onclick="removeEntry(${i})"><i class="fas fa-times"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSummary(c){
+  const el=document.getElementById('summaryBody');
+  const lbl=document.getElementById('posTypeLbl');
+  lbl.textContent=S.positionType;
+  if(S.positionType==='LONG'){lbl.style.background='var(--gd)';lbl.style.color='var(--g)';}
+  else{lbl.style.background='var(--rd)';lbl.style.color='var(--r)';}
+  if(!c){el.innerHTML=`<div class="empty" style="padding:26px 10px"><i class="fas fa-chart-bar"></i><p>No active position</p></div>`;return;}
+  const pc=c.pnl>=0?'var(--g)':'var(--r)';
+  const s=c.pnl>=0?'+':'';
+  el.innerHTML=`
+    <div class="sr"><span class="sk">Mark Price</span><span class="sv2">${fmtP(S.markPrice)}</span></div>
+    <div class="sr"><span class="sk">Avg Entry Price</span><span class="sv2" style="color:var(--o)">${fmtP(c.avgEntry)}</span></div>
+    <div class="sr"><span class="sk">Break-even Price</span><span class="sv2">${fmtP(c.breakEven)}</span></div>
+    <div class="sr"><span class="sk">Position Size (BTC)</span><span class="sv2">${c.totalSizeBTC.toFixed(4)} BTC</span></div>
+    <div class="sr"><span class="sk">Notional Value</span><span class="sv2">${fmt(c.totalNotional)}</span></div>
+    <div class="sr"><span class="sk">Total Margin</span><span class="sv2">${fmt(c.totalMargin)}</span></div>
+    <div class="sr"><span class="sk">Eff. Leverage</span><span class="sv2" style="color:var(--b)">${c.effLev.toFixed(1)}×</span></div>
+    <div class="sr"><span class="sk">Unrealized PNL</span><span class="sv2" style="color:${pc}">${s}${fmt(c.pnl)} (${s}${c.roi.toFixed(2)}%)</span></div>
+    <div class="sr"><span class="sk">Liq. Price</span><span class="sv2" style="color:var(--r)">${fmtP(c.liqPrice)}</span></div>
+    <div class="sr"><span class="sk">Dist. to Liq.</span><span class="sv2">${c.liqDist.toFixed(2)}%</span></div>
+    <div class="sr"><span class="sk">Maint. Margin Rate</span><span class="sv2">${c.mmRate}%</span></div>
+    <div class="sr"><span class="sk">DCA Entries</span><span class="sv2">${S.entries.length}</span></div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════════════
+function setCurrency(cur){
+  S.currency=cur;
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.textContent===cur));
+  updateAddonLabels();
+  save(); recalcAll();
+}
+
+function setPositionType(t){
+  S.positionType=t;
+  document.getElementById('btnLong').classList.toggle('active',t==='LONG');
+  document.getElementById('btnShort').classList.toggle('active',t==='SHORT');
+  save(); recalcAll();
+}
+
+function onLevChange(v){
+  S.leverage=parseInt(v);
+  document.getElementById('levVal').textContent=v+'×';
+  document.getElementById('levSlider').style.setProperty('--fill',((v-1)/124*100)+'%');
+  save();
+}
+
+function addPosition(){
+  const epRaw = parseFloat(document.getElementById('entryPrice').value);
+  const mgRaw = parseFloat(document.getElementById('marginAmount').value);
+  if(!epRaw||!mgRaw||epRaw<=0||mgRaw<=0){ toast('Entry Price ແລະ Margin ຕ້ອງໃສ່ໃຫ້ຖືກຕ້ອງ','warning'); return; }
+  // Convert from display currency to USDT for storage
+  const epUSDT = (S.currency==='USDT') ? epRaw : inputToUSDT(epRaw);
+  const mgUSDT = (S.currency==='USDT') ? mgRaw : inputToUSDT(mgRaw);
+  if(!epUSDT||!mgUSDT||!S.markPrice&&S.currency!=='USDT'){ toast('ລໍຖ້າ mark price ກ່ອນ ຖ້ານຳໃຊ້ BTC/SATS','warning'); return; }
+  S.entries=[{entryPriceUSDT:epUSDT, marginUSDT:mgUSDT, leverage:S.leverage}];
+  document.getElementById('entryPrice').value='';
+  document.getElementById('marginAmount').value='';
+  save(); recalcAll();
+  toast('✅ Position added — PNL ກຳລັງ track ແບບ live','success');
+}
+
+function addDCA(){
+  if(!S.entries.length){ toast('ຕ້ອງ ADD POSITION ກ່ອນ','warning'); return; }
+  const epRaw = parseFloat(document.getElementById('dcaEntry').value);
+  const mgRaw = parseFloat(document.getElementById('dcaMargin').value);
+  if(!epRaw||!mgRaw||epRaw<=0||mgRaw<=0){ toast('ໃສ່ DCA Price ແລະ Margin ໃຫ້ຖືກ','warning'); return; }
+  const epUSDT = (S.currency==='USDT') ? epRaw : inputToUSDT(epRaw);
+  const mgUSDT = (S.currency==='USDT') ? mgRaw : inputToUSDT(mgRaw);
+  S.entries.push({entryPriceUSDT:epUSDT, marginUSDT:mgUSDT, leverage:S.leverage});
+  document.getElementById('dcaEntry').value='';
+  document.getElementById('dcaMargin').value='';
+  save(); recalcAll();
+  toast('📊 DCA #'+S.entries.length+' added — Avg entry recalculated','info');
+}
+
+function removeEntry(i){
+  S.entries.splice(i,1);
+  save(); recalcAll();
+  toast('🗑️ Entry removed','info');
+}
+
+function clearAll(){
+  if(!S.entries.length){ toast('Nothing to clear','info'); return; }
+  if(!confirm('Clear all entries?')) return;
+  S.entries=[];
+  save(); recalcAll();
+  toast('🗑️ Dashboard cleared','info');
+}
+
+// ═══════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════
+function toast(msg, type='info'){
+  const col={success:'var(--g)',warning:'var(--o)',danger:'var(--r)',info:'var(--b)'};
+  const c=document.getElementById('toastWrap');
+  const el=document.createElement('div');
+  el.className='tm2';
+  el.style.borderLeft='3px solid '+(col[type]||col.info);
+  el.innerHTML=`<span style="color:${col[type]||col.info}"><i class="fas fa-circle-dot"></i></span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>{ el.style.animation='tout .3s ease forwards'; setTimeout(()=>el.remove(),300); },3000);
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  load();
+
+  // Restore UI state
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.textContent===S.currency));
+  document.getElementById('btnLong').classList.toggle('active',S.positionType==='LONG');
+  document.getElementById('btnShort').classList.toggle('active',S.positionType==='SHORT');
+  document.getElementById('levSlider').value=S.leverage;
+  document.getElementById('levVal').textContent=S.leverage+'×';
+  document.getElementById('levSlider').style.setProperty('--fill',((S.leverage-1)/124*100)+'%');
+  updateAddonLabels();
+
+  // Init chart first
+  initChart();
+
+  // Start live ticker WS
+  startTickerWS();
+
+  // REST price fallback
+  fetch('https://fapi.binance.com/fapi/v1/ticker/price?symbol=BTCUSDT')
+    .then(r=>r.json()).then(d=>{
+      if(!S.markPrice){
+        S.markPrice=parseFloat(d.price);
+        updateTickerUI(S.markPrice,0,0);
+        recalcAll();
+      }
+    }).catch(()=>{});
+
+  recalcAll();
+  if(S.entries.length) toast('💾 Session restored from storage','info');
+});
+</script>
 </body>
 </html>
